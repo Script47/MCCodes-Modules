@@ -19,6 +19,8 @@ EMail: Script47@hotmail.com
 
 MWG Profile: http://www.makewebgames.com/member.php/69670-Script47
 
+Twitter: https://twitter.com/Script47
+
 Notice!
 ===============
 
