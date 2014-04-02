@@ -21,7 +21,7 @@ MWG Profile: http://www.makewebgames.com/member.php/69670-Script47
 
 Twitter: https://twitter.com/Script47
 
-Notice!
+Notice
 ===============
 
 All the modules in this directory are free, you do not have the rights to claim as your work OR sell them. I simply request you keep the comment block on top which gives me credit.
