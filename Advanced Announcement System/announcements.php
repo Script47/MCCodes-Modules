@@ -132,9 +132,6 @@ if(isset($_GET['newAnnouncement'])) {
         } else if(!isset($_POST['Title']) || empty($_POST['Title']) || !isset($_POST['Announement']) || empty($_POST['Announement'])) {
             echo '<font color="red">One or more of the required fields are missing.</font>';
             exit();
-        } else if (!in_array($_POST['Urgency'], $urgencyColours)) {#
-            echo '<font color="red">That value does not exist.</font>';            
-            exit();
         } else {
             $title = htmlspecialchars(trim($db->escape($_POST['Title'])));
             $announcement = htmlspecialchars(trim($db->escape($_POST['Announement'])));
