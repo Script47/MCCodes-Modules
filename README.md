@@ -8,7 +8,7 @@ MCCodes-Modules - Overview
 Installation
 ===============
 
-Each module will come with a link going to a thread which will have instructions helping you install it.
+Each module will come with a read me going to a thread which will have instructions helping you install it.
 
 Bugs or Requests
 ===============
