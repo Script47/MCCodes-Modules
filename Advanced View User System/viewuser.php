@@ -15,7 +15,6 @@
                 padding-left: 2px;
                 padding-bottom: 3px;
                 outline: 0;
-                
             }
             .table {
                 border-collapse: collapse;
