@@ -1,8 +1,6 @@
 ALTER TABLE `users` ADD COLUMN `rating` INT DEFAULT 0;
 ALTER TABLE `users` ADD COLUMN `daily_rating` INT DEFAULT 1;
 
-
-
 CREATE TABLE IF NOT EXISTS `comments` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `Comment` varchar(225) NOT NULL,
