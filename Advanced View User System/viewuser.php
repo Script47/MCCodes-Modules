@@ -157,6 +157,7 @@ if($rateUp) {
         echo "<font color='red'>You can't up rate yourself.</font>";
         exit(header("Refresh:2; URL=viewuser.php?u=$id"));            
     } else {           
+        event_add($id, "<font color='green'><a href='viewuser.php?u={$results['userid']}'><font color='blue'>[{$results['userid']}]{$results['username']}</font></a> rated you up!</font>");        
         $db->query("UPDATE `users` SET rating=rating+1 WHERE userid=$id"); 
         $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userID");
         exit(header("Location: viewuser.php?u=$id"));
@@ -175,6 +176,7 @@ if($rateUp) {
         echo "<font color='red'>You can't down rate yourself.</font>";
         exit(header("Refresh:2; URL=viewuser.php?u=$id"));            
     } else {
+        event_add($id, "<font color='red'><a href='viewuser.php?u={$results['userid']}'><font color='blue'>[{$results['userid']}]{$results['username']}</font></a> down rated you!</font>");
         $db->query("UPDATE `users` SET rating=rating-1 WHERE userid=$id"); 
         $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userID"); 
         exit(header("Location: viewuser.php?u=$id"));
