@@ -143,52 +143,42 @@ echo " <a href='viewuser.php?u={$_GET['u']}&rateUp=true'><img src='http://www.fa
 echo "<a href='viewuser.php?u={$_GET['u']}&rateDown=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/arrow_down.png' alt='Rate Down' title='Rate Down'></a>";
 
 if($rateUp) {
-    $id = htmlspecialchars(trim($_GET['u']));
-    $userID = $ir['userid'];
     
-    $checkDailyRating = $db->query("SELECT * FROM `users` WHERE userid=$userID");
-    $results = $db->fetch_row($checkDailyRating);
-    
-    if($results['daily_rating'] <= 0) {
+    if($ir['daily_rating'] <= 0) {
         echo '<font color="red">You have already used your rating for today.</font>';
-        exit(header("Refresh:2; URL=viewuser.php?u=$id"));            
-    } else if($id == $userID) {
+        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));            
+    } else if($_GET["u"] == $userid) {
         echo "<font color='red'>You can't up rate yourself.</font>";
-        exit(header("Refresh:2; URL=viewuser.php?u=$id"));            
+        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]);            
     } else {           
-        event_add($id, "<font color='green'><a href='viewuser.php?u={$results['userid']}'><font color='blue'>[{$results['userid']}]{$results['username']}</font></a> rated you up!</font>");        
-        $db->query("UPDATE `users` SET rating=rating+1 WHERE userid=$id"); 
-        $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userID");
-        exit(header("Location: viewuser.php?u=$id"));
+        event_add($id, "<font color='green'><a href='viewuser.php?u={$ir['userid']}'><font color='blue'>[{$ir['userid']}]{$ir['username']}</font></a> rated you up!</font>");        
+        $db->query("UPDATE `users` SET rating=rating+1 WHERE userid=".$_GET["u"]); 
+        $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userid");
+        exit(header("Location: viewuser.php?u=".$_GET["u"]);
     }
 } else if($rateDown) {
-    $id = htmlspecialchars(trim($_GET['u']));
-    $userID = $ir['userid'];
     
-    $checkDailyRating = $db->query("SELECT * FROM `users` WHERE userid=$userID");
-    $results = $db->fetch_row($checkDailyRating);
-    
-    if($results['daily_rating'] <= 0) {
+    if($ir['daily_rating'] <= 0) {
         echo '<font color="red">You have already used your rating for today.</font>';
-        exit(header("Refresh:2; URL=viewuser.php?u=$id"));            
-    } else if($id == $userID) {
+        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));            
+    } else if($id == $userid) {
         echo "<font color='red'>You can't down rate yourself.</font>";
-        exit(header("Refresh:2; URL=viewuser.php?u=$id"));            
+        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));            
     } else {
-        event_add($id, "<font color='red'><a href='viewuser.php?u={$results['userid']}'><font color='blue'>[{$results['userid']}]{$results['username']}</font></a> down rated you!</font>");
-        $db->query("UPDATE `users` SET rating=rating-1 WHERE userid=$id"); 
-        $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userID"); 
-        exit(header("Location: viewuser.php?u=$id"));
+        event_add($_GET["u"], "<font color='red'><a href='viewuser.php?u={$ir['userid']}'><font color='blue'>[{$ir['userid']}]{$ir['username']}</font></a> down rated you!</font>");
+        $db->query("UPDATE `users` SET rating=rating-1 WHERE userid=$".$_GET["u"]); 
+        $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userid"); 
+        exit(header("Location: viewuser.php?u=".$_GET["u"]));
     }
 }
 
 echo "<br/>
 Location: {$r['cityname']}</td><td>
-Money: \${$r['money']}<br />
+Money: ".money_formatter($r['money'])."<br />
 Crystals: {$r['crystals']}<br />
 Property: {$r['hNAME']}<br />
 Referals: ";
-$rr = $db->query("SELECT * FROM referals WHERE refREFER={$r['userid']}");
+$rr = $db->query("SELECT refID FROM referals WHERE refREFER={$r['userid']}");
 echo $db->num_rows($rr);
 echo "<br />
 Friends: {$r['friend_count']}<br />
@@ -283,22 +273,18 @@ if(isset($_POST['postComment'])) {
     } else {
         $comment = htmlspecialchars(trim($db->escape($_POST['Comment']))); 
         $username = $ir['username'];
-        $sendersID = $ir['userid'];
-        $sendTo = $_GET['u'];
         
-        $insertComment = $db->query("INSERT INTO `comments` (Comment, SendTo, SentFrom) VALUES ('$comment', '$sendTo', '$username')");
+        $insertComment = $db->query("INSERT INTO `comments` (Comment, SendTo, SentFrom) VALUES ('".$comment."', ".$_GET["u"].", '."$username."')");
         
         if($insertComment) {
-            event_add($sendTo, "<a href='viewuser.php?u={$sendersID}'><font color='blue'>[$sendersID]$username</font></a> commented on your profile! Click <a href='viewuser.php?u=$sendTo#comments'><font color='blue'>here</font></a> to check it.");
-            exit(header("Location: viewuser.php?u=$sendTo"));
+            event_add($_GET["u"], "<a href='viewuser.php?u=".$ir['userid']."'><font color='blue'>[".$ir['userid']."]".$ir['username']."</font></a> commented on your profile! Click <a href='viewuser.php?u=".$ir['userid']."#comments'><font color='blue'>here</font></a> to check it.");
+            exit(header("Location: viewuser.php?u=".$_GET["u"]));
         } else {
             echo '<font color="red">Could not create comment.</font>';
-            exit(header("Refresh:2; URL=viewuser.php?u=$sendTo"));            
+            exit(header("Refresh:2; URL=viewuser.php?u="$_GET["u"]));            
         }
     }
 }
-
-$profileID = $_GET['u'];
 
 echo '<table id="comments" class="table" border="1" cellpadding="10" align="center">';
 
@@ -306,11 +292,11 @@ echo '<th>Comment</th>';
 echo '<th>Sent From</th>';
 echo '<th>Sent On</th>';
 
-if($profileID == $ir['userid']) {
+if($_GET["u"] == $ir['userid']) {
     echo '<th>Actions</th>';
 }
 
-$selectComments = $db->query("SELECT * FROM `comments` WHERE `SendTo` = $profileID ORDER BY `SentOn` DESC");
+$selectComments = $db->query("SELECT * FROM `comments` WHERE `SendTo` = ".$_GET["u"]." ORDER BY `SentOn` DESC");
 
 while($getComments = $db->fetch_row($selectComments)) {
     echo '<tr><td>';
@@ -319,9 +305,9 @@ while($getComments = $db->fetch_row($selectComments)) {
     echo $getComments['SentFrom'];
     echo '<td>';
     echo date('d/m/Y g:i:s A',  strtotime($getComments['SentOn']));
-    if($profileID == $ir['userid']) {
+    if($_GET["u"] == $ir['userid']) {
         echo '<td>';
-        echo "<a href='viewuser.php?u={$profileID}&commentID={$getComments['ID']}&delete=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/delete.png' alt='Delete Comment' title='Delete Comment'></a>";
+        echo "<a href='viewuser.php?u=".$_GET["u"]."&commentID="$getComments['ID']."&delete=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/delete.png' alt='Delete Comment' title='Delete Comment'></a>";
     }
     echo '</td></tr>';
 }   
@@ -329,8 +315,8 @@ echo '</table>';
 
 if(isset($_GET['delete'])) {
     $commentID = htmlspecialchars(trim($_GET['commentID']));
-    $db->query("DELETE FROM `comments` WHERE ID=$commentID");
-    exit(header("Location: viewuser.php?u=$profileID"));    
+    $db->query("DELETE FROM `comments` WHERE ID=".$commentID");
+    exit(header("Location: viewuser.php?u=".$_GET["u"]));    
 }
 
 function checkblank($in) {
