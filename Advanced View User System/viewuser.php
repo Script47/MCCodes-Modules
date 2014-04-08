@@ -307,7 +307,7 @@ while($getComments = $db->fetch_row($selectComments)) {
     echo date('d/m/Y g:i:s A',  strtotime($getComments['SentOn']));
     if($_GET["u"] == $ir['userid']) {
         echo '<td>';
-        echo "<a href='viewuser.php?u=".$_GET["u"]."&commentID="$getComments['ID']."&delete=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/delete.png' alt='Delete Comment' title='Delete Comment'></a>";
+        echo "<a href='viewuser.php?u=".$_GET["u"]."&commentID=".$getComments['ID']."&delete=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/delete.png' alt='Delete Comment' title='Delete Comment'></a>";
     }
     echo '</td></tr>';
 }   
