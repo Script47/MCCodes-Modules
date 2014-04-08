@@ -315,7 +315,7 @@ echo '</table>';
 
 if(isset($_GET['delete'])) {
     $commentID = htmlspecialchars(trim($_GET['commentID']));
-    $db->query("DELETE FROM `comments` WHERE ID=".$commentID");
+    $db->query("DELETE FROM `comments` WHERE ID=".$commentID);
     exit(header("Location: viewuser.php?u=".$_GET["u"]));    
 }
 
