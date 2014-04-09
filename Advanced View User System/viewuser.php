@@ -281,7 +281,7 @@ if(isset($_POST['postComment'])) {
             exit(header("Location: viewuser.php?u=".$_GET["u"]));
         } else {
             echo '<font color="red">Could not create comment.</font>';
-            exit(header("Refresh:2; URL=viewuser.php?u="$_GET["u"]));            
+            exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));            
         }
     }
 }
