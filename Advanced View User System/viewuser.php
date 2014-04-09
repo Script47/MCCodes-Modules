@@ -5,7 +5,7 @@
             .longInput {
                 height: auto;
                 width: 100%;
-                border: 1px solid black;                
+                border: 1px solid black;
                 border-radius: 5px;
                 -webkit-border-radius: 5px;
                 -moz-border-radius: 5px;
@@ -18,14 +18,14 @@
             }
             .table {
                 border-collapse: collapse;
-            }            
+            }
         </style>
     </head>
 </html>
 <?php
 
 /*
- * MCCodes V2 Modification 
+ * MCCodes V2 Modification
  * View User Advanced System
  * This file still contains MCCodes original code, however it was cleaned up and new features have been added.
  * Cleaned By: Script47
@@ -50,16 +50,16 @@ echo "Sorry, we could not find a user with that ID, check your source.";
 } else {
     $r = $db->fetch_row($q);
 
-if($r['user_level'] == 1) { 
-    $userl="Member"; 
-} else if($r['user_level'] == 2) { 
-    $userl="Admin";  
-} else if ($r['user_level'] == 3) { 
-    $userl="Secretary"; 
-} else if($r['user_level'] == 0) { 
-    $userl="NPC"; 
-}  else { 
-    $userl="Assistant"; 
+if($r['user_level'] == 1) {
+    $userl="Member";
+} else if($r['user_level'] == 2) {
+    $userl="Admin";
+} else if ($r['user_level'] == 3) {
+    $userl="Secretary";
+} else if($r['user_level'] == 0) {
+    $userl="NPC";
+}  else {
+    $userl="Assistant";
 }
 
 $lon = ($r['laston'] > 0) ? date('F j, Y g:i:s a', $r['laston']) : "Never";
@@ -70,7 +70,7 @@ $d="";
 if($r['laston'] > 0) {
     $la=time()-$r['laston'];
     $unit="seconds";
-    if($la >= 60) {    
+    if($la >= 60) {
         $la=(int) ($la/60);
         $unit="minutes";
     }
@@ -106,14 +106,14 @@ if($ll >= 60) {
   $str2="--";
 }
 
-if($r['donatordays']) { 
+if($r['donatordays']) {
     $r['username'] = "<font color=red>{$r['username']}</font>";
-    $d="<img src='donator.gif' alt='Donator: {$r['donatordays']} Days Left' title='Donator: {$r['donatordays']} Days Left' />"; 
+    $d="<img src='donator.gif' alt='Donator: {$r['donatordays']} Days Left' title='Donator: {$r['donatordays']} Days Left' />";
 }
-if($r['laston'] >= time()-15*60) { 
-    $on="<font color=green><b>Online</b></font>"; 
-} else { 
-    $on="<font color=red><b>Offline</b></font>"; 
+if($r['laston'] >= time()-15*60) {
+    $on="<font color=green><b>Online</b></font>";
+} else {
+    $on="<font color=red><b>Offline</b></font>";
 }
 echo "<h3>Profile for {$r['username']}</h3>
     <table width=100% cellspacing=1 class='table'><tr style='background:gray'><th>General Info</th><th>Financial Info</th> <th>Display Pic</th></tr>
@@ -144,31 +144,31 @@ echo " <a href='viewuser.php?u={$_GET['u']}&rateUp=true'><img src='http://www.fa
 echo "<a href='viewuser.php?u={$_GET['u']}&rateDown=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/arrow_down.png' alt='Rate Down' title='Rate Down'></a>";
 
 if($rateUp) {
-    
+
     if($ir['daily_rating'] <= 0) {
         echo '<font color="red">You have already used your rating for today.</font>';
-        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));            
+        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
     } else if($_GET["u"] == $userid) {
         echo "<font color='red'>You can't up rate yourself.</font>";
-        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]);            
-    } else {           
-        event_add($id, "<font color='green'><a href='viewuser.php?u={$ir['userid']}'><font color='blue'>[{$ir['userid']}]{$ir['username']}</font></a> rated you up!</font>");        
-        $db->query("UPDATE `users` SET rating=rating+1 WHERE userid=".$_GET["u"]); 
+        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
+    } else {
+        event_add($id, "<font color='green'><a href='viewuser.php?u={$ir['userid']}'><font color='blue'>[{$ir['userid']}]{$ir['username']}</font></a> rated you up!</font>");
+        $db->query("UPDATE `users` SET rating=rating+1 WHERE userid=".$_GET["u"]);
         $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userid");
-        exit(header("Location: viewuser.php?u=".$_GET["u"]);
+        exit(header("Location: viewuser.php?u=".$_GET["u"]));
     }
 } else if($rateDown) {
-    
+
     if($ir['daily_rating'] <= 0) {
         echo '<font color="red">You have already used your rating for today.</font>';
-        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));            
+        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
     } else if($id == $userid) {
         echo "<font color='red'>You can't down rate yourself.</font>";
-        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));            
+        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
     } else {
         event_add($_GET["u"], "<font color='red'><a href='viewuser.php?u={$ir['userid']}'><font color='blue'>[{$ir['userid']}]{$ir['username']}</font></a> down rated you!</font>");
-        $db->query("UPDATE `users` SET rating=rating-1 WHERE userid=$".$_GET["u"]); 
-        $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userid"); 
+        $db->query("UPDATE `users` SET rating=rating-1 WHERE userid=$".$_GET["u"]);
+        $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userid");
         exit(header("Location: viewuser.php?u=".$_GET["u"]));
     }
 }
@@ -272,17 +272,17 @@ if(isset($_POST['postComment'])) {
         echo '<font color="red">Required field is empty!</font>';
         exit();
     } else {
-        $comment = htmlspecialchars(trim($db->escape($_POST['Comment']))); 
+        $comment = htmlspecialchars(trim($db->escape($_POST['Comment'])));
         $username = $ir['username'];
-        
-        $insertComment = $db->query("INSERT INTO `comments` (Comment, SendTo, SentFrom) VALUES ('".$comment."', ".$_GET["u"].", '."$username."')");
-        
+
+        $insertComment = $db->query("INSERT INTO `comments` (Comment, SendTo, SentFrom) VALUES ('".$comment."', ".$_GET["u"].", '.".$username."')");
+
         if($insertComment) {
             event_add($_GET["u"], "<a href='viewuser.php?u=".$ir['userid']."'><font color='blue'>[".$ir['userid']."]".$ir['username']."</font></a> commented on your profile! Click <a href='viewuser.php?u=".$ir['userid']."#comments'><font color='blue'>here</font></a> to check it.");
             exit(header("Location: viewuser.php?u=".$_GET["u"]));
         } else {
             echo '<font color="red">Could not create comment.</font>';
-            exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));            
+            exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
         }
     }
 }
@@ -311,18 +311,18 @@ while($getComments = $db->fetch_row($selectComments)) {
         echo "<a href='viewuser.php?u=".$_GET["u"]."&commentID=".$getComments['ID']."&delete=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/delete.png' alt='Delete Comment' title='Delete Comment'></a>";
     }
     echo '</td></tr>';
-}   
+}
 echo '</table>';
 
 if(isset($_GET['delete'])) {
     $commentID = htmlspecialchars(trim($_GET['commentID']));
     $db->query("DELETE FROM `comments` WHERE ID=".$commentID);
-    exit(header("Location: viewuser.php?u=".$_GET["u"]));    
+    exit(header("Location: viewuser.php?u=".$_GET["u"]));
 }
 
 function checkblank($in) {
-  if(!$in) { 
-    return "N/A"; 
+  if(!$in) {
+    return "N/A";
   }
   return $in;
 }
