@@ -30,6 +30,7 @@
  * This file still contains MCCodes original code, however it was cleaned up and new features have been added.
  * Cleaned By: Script47
  * New Features By: Script47
+ * Optimized By: KyleMassacre
  * Price: Free
  * Day Cron: $db->query("UPDATE `user` SET daily_rating=1");
  * Contact Via MWG: http://www.makewebgames.com/member.php/69670-Script47
