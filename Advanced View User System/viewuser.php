@@ -1,29 +1,4 @@
-<html>
-    <head>
-        <title>Advanced View User</title>
-        <style>
-            .longInput {
-                height: auto;
-                width: 100%;
-                border: 1px solid black;
-                border-radius: 5px;
-                -webkit-border-radius: 5px;
-                -moz-border-radius: 5px;
-                box-shadow: 0 0 1px #000;
-                -webkit-box-shadow: 0 0 1px #000;
-                -moz-box-shadow: 0 0 1px #000;
-                padding-left: 2px;
-                padding-bottom: 3px;
-                outline: 0;
-            }
-            .table {
-                border-collapse: collapse;
-            }
-        </style>
-    </head>
-</html>
 <?php
-
 /*
  * MCCodes V2 Modification
  * View User Advanced System
@@ -37,97 +12,190 @@
  * Contact Via Twitter: https://twitter.com/Script47
  */
 
-include "globals.php";
-$_GET['u'] = abs((int) $_GET['u']);
+/********** CONFIGURATION **********/
+$vu_config = array(
+	'date.format' => 'F j, Y g:i:s a'
+);
+/******** CONFIGURATION END ********/
 
-if(!$_GET['u']) {
-    echo "Invalid use of file";
-} else {
-$q= $db->query("SELECT u.*,us.*,c.*,h.*,g.*,f.* FROM users u LEFT JOIN userstats us ON u.userid=us.userid LEFT JOIN cities c ON u.location=c.cityid LEFT JOIN houses h ON u.maxwill=h.hWILL LEFT JOIN gangs g ON g.gangID=u.gang LEFT JOIN fedjail f ON f.fed_userid=u.userid WHERE u.userid={$_GET['u']}");
+/************ FUNCTIONS ************/
 
-if($db->num_rows($q) == 0) {
-echo "Sorry, we could not find a user with that ID, check your source.";
-} else {
-    $r = $db->fetch_row($q);
-
-if($r['user_level'] == 1) {
-    $userl="Member";
-} else if($r['user_level'] == 2) {
-    $userl="Admin";
-} else if ($r['user_level'] == 3) {
-    $userl="Secretary";
-} else if($r['user_level'] == 0) {
-    $userl="NPC";
-}  else {
-    $userl="Assistant";
-}
-
-$lon = ($r['laston'] > 0) ? date('F j, Y g:i:s a', $r['laston']) : "Never";
-$sup = date('F j, Y g:i:s a', $r['signedup']);
-$ts= $r['strength']+$r['agility']+$r['guard']+$r['labour']+$r['IQ'];
-$d="";
-
-if($r['laston'] > 0) {
-    $la=time()-$r['laston'];
-    $unit="seconds";
-    if($la >= 60) {
-        $la=(int) ($la/60);
-        $unit="minutes";
-    }
-    if($la >= 60) {
-        $la=(int) ($la/60);
-        $unit="hours";
-        if($la >= 24) {
-            $la=(int) ($la/24);
-            $unit="days";
+/**
+ * Calculate the time difference between the given date and time and now and returns an human friendly description of the time lapsed.
+ * 
+ * @param string $datetime The date and time to calculate the time lapsed.
+ * @return string Returns an human friendly description of the time lapsed.
+ */
+function time_lapsed($datetime) {
+    $time_diff = time() - $datetime;
+    
+    $tokens = array(
+    	86400 => 'day',
+        3600 => 'hour',
+        60 => 'minute',
+        1 => 'second'
+    );
+    
+    foreach ($tokens as $unit => $description) {
+        if ($time_diff < $unit) {
+            continue;
         }
+        
+        $result = floor($time_diff / $unit);
+        
+        return $result . ' ' . $description . (($result > 1) ? 's' : '');
     }
-    $str="$la $unit ago";
-} else {
-  $str="--";
+    
+    return '0 second';
 }
+
+/********** FUNCTIONS END **********/
+
+include 'globals.php';
+
+$_GET['u'] = isset($_GET['u']) ? abs((int) $_GET['u']) : null;
+
+if(!$_GET['u'] > 0) {
+    echo '<p>Invalid use of file</p>';
+    $h->endpage();
+    die();
+}
+
+echo <<<CSS
+<style>
+.comment-form {
+    display: block;
+    margin: 20px 0;
+}
+
+.comment-form fieldset {
+    border: 0;
+    margin: 0 0 10px 0;
+    padding: 0 8px 0 0;
+}
+
+.comment-field {
+    height: auto;
+    width: 100%;
+    border: 1px solid black;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    box-shadow: inset 0 5px 5px rgba(0,0,0,.2);
+    -webkit-box-shadow: 0 0 1px #000;
+    -moz-box-shadow: 0 0 1px #000;
+    padding: 3px;
+    outline: 0;
+}
+        
+.profile-table {
+    line-height: 1.5em;
+}
+
+.donator-name {
+    color: #ca3c3c;
+    font-weight: bold;
+}
+
+.user-status-online, .user-status-offline {
+    border-radius: 4px;
+    color: #fff;
+    font-weight: bold;
+    padding: 2px 5px;
+    text-shadow: 1px 1px 1px rgba(0,0,0,.2);
+}
+        
+.user-status-online {
+    background: #1cb841;
+}
+
+.user-status-offline {
+    background: #ca3c3c;
+}
+</style>
+CSS;
+
+$sql = <<<SQL
+SELECT
+    u.*,us.*,c.*,h.*,g.*,f.*
+FROM
+    users u
+    LEFT JOIN userstats us ON u.userid=us.userid
+    LEFT JOIN cities c ON u.location=c.cityid
+    LEFT JOIN houses h ON u.maxwill=h.hWILL
+    LEFT JOIN gangs g ON g.gangID=u.gang
+    LEFT JOIN fedjail f ON f.fed_userid=u.userid
+WHERE
+    u.userid={$_GET['u']}
+SQL;
+
+$q = $db->query($sql);
+
+if ($db->num_rows($q) == 0) {
+    echo '<p>Sorry, we could not find a user with that ID, check your source.</p>';
+    $h->endpage();
+    die();
+}
+
+$r = $db->fetch_row($q);
+
+switch ($r['user_level']) {
+	case 1:
+	    $user_level = 'Member'; break;
+	case 2:
+	    $user_level = 'Admin'; break;
+	case 3:
+	    $user_level = 'Secretary'; break;
+	case 4:
+	    $user_level = 'NPC'; break;
+	default:
+	    $user_level = 'Assistant';
+}
+
+$signup_date = date($vu_config['date.format'], $r['signedup']);
+
+if ($r['laston'] > 0) {
+    $last_action = time_lapsed($r['laston']) . ' ago';
+} else {
+    $last_action = 'Never';
+}
+
 if($r['last_login'] > 0) {
-    $ll=time()-$r['last_login'];
-    $unit2="seconds";
-if($ll >= 60) {
-    $ll=(int) ($ll/60);
-    $unit2="minutes";
-}
-if($ll >= 60) {
-    $ll=(int) ($ll/60);
-    $unit2="hours";
-        if($ll >= 24) {
-            $ll=(int) ($ll/24);
-            $unit2="days";
-        }
-    }
-    $str2="$ll $unit2 ago";
+    $last_login = time_lapsed($r['last_login']) . ' ago';
 } else {
-  $str2="--";
+    $last_login = '--';
 }
 
-if($r['donatordays']) {
-    $r['username'] = "<font color=red>{$r['username']}</font>";
-    $d="<img src='donator.gif' alt='Donator: {$r['donatordays']} Days Left' title='Donator: {$r['donatordays']} Days Left' />";
-}
-if($r['laston'] >= time()-15*60) {
-    $on="<font color=green><b>Online</b></font>";
+if ($r['donatordays']) {
+    $username_display = "<span class=\"donator-name\">{$r['username']}</span>";
+    $donator_title = "Donator: {$r['donatordays']} Days Left";
+    $donator_sign = "<img src=\"donator.gif\" alt=\"{$donator_title}\" title=\"{$donator_title}\" />";
 } else {
-    $on="<font color=red><b>Offline</b></font>";
+    $username_display = $r['username'];
+    $donator_sign = '';
 }
+
+if($r['laston'] >= (time() - 15 * 60)) {
+    $user_status = '<span class="user-status-online">Online</span>';
+} else {
+    $user_status = '<span class="user-status-offline">Offline</span>';
+}
+
 echo "<h3>Profile for {$r['username']}</h3>
-    <table width=100% cellspacing=1 class='table'><tr style='background:gray'><th>General Info</th><th>Financial Info</th> <th>Display Pic</th></tr>
-    <tr><td>Name: {$r['username']} [{$r['userid']}] $d<br />
-    User Level: $userl<br />
-    Duties: {$r['duties']}<br />
-    Gender: {$r['gender']}<br />
-    Signed Up: $sup<br />
-    Last Active: $lon<br />
-    Last Action: $str<br />
-    Last Login: $str2<br />
-    Online: $on<br />
-    Days Old: {$r['daysold']}<br />
-    Rating: ";
+
+<table width=\"100%\" cellspacing=\"1\" class=\"table profile-table\">
+    <tr><th>General Info</th><th>Financial Info</th><th>Display Pic</th></tr>
+    <tr><td>
+    <b>Name:</b> {$username_display} [{$r['userid']}] {$donator_sign}<br />
+    <b>User Level:</b> {$user_level}<br />
+    <b>Duties:</b> {$r['duties']}<br />
+    <b>Gender:</b> {$r['gender']}<br />
+    <b>Signed Up:</b> {$signup_date}<br />
+    <b>Last Action:</b> {$last_action}<br />
+    <b>Last Login:</b> {$last_login}<br />
+    <b>Online:</b> {$user_status}<br />
+    <b>Days Old:</b> {$r['daysold']}<br />
+    <b>Rating:</b> ";
 
 if($r['rating'] == 0) {
 	echo '<font color="black">'.$r['rating'].'</font>';
@@ -144,7 +212,6 @@ echo " <a href='viewuser.php?u={$_GET['u']}&rateUp=true'><img src='http://www.fa
 echo "<a href='viewuser.php?u={$_GET['u']}&rateDown=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/arrow_down.png' alt='Rate Down' title='Rate Down'></a>";
 
 if($rateUp) {
-
     if($ir['daily_rating'] <= 0) {
         echo '<font color="red">You have already used your rating for today.</font>';
         exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
@@ -158,7 +225,6 @@ if($rateUp) {
         exit(header("Location: viewuser.php?u=".$_GET["u"]));
     }
 } else if($rateDown) {
-
     if($ir['daily_rating'] <= 0) {
         echo '<font color="red">You have already used your rating for today.</font>';
         exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
@@ -174,7 +240,7 @@ if($rateUp) {
 }
 
 echo "<br/>
-Location: {$r['cityname']}</td><td>
+<b>Location:</b> {$r['cityname']}</td><td>
 Money: ".money_formatter($r['money'])."<br />
 Crystals: {$r['crystals']}<br />
 Property: {$r['hNAME']}<br />
@@ -259,20 +325,22 @@ if($ir['user_level'] == 2 || $ir['user_level'] == 3 || $ir['user_level'] == 5) {
     echo "&nbsp;";
 }
     echo "</tr></table>";
-    }
-}
 
-echo '<form method="post">
-        <input class="longInput" name="Comment" placeholder="Your comment" title="Your Comment" spellcheck="true" required>
-        <input type="submit" name="postComment" value="Comment">
-     </form>';
+echo <<<COMMENT_FORM
+<form method="post" class="comment-form">
+    <fieldset>
+        <input class="comment-field" name="comment" placeholder="Your comment" title="Your Comment" spellcheck="true" required />
+    </fieldset>
+    <input type="submit" name="postComment" value="Comment" />
+</form>
+COMMENT_FORM;
 
 if(isset($_POST['postComment'])) {
-    if(!isset($_POST['Comment']) || empty($_POST['Comment'])) {
+    if(!isset($_POST['comment']) || empty($_POST['comment'])) {
         echo '<font color="red">Required field is empty!</font>';
         exit();
     } else {
-        $comment = htmlspecialchars(trim($db->escape($_POST['Comment'])));
+        $comment = htmlspecialchars(trim($db->escape($_POST['comment'])));
         $username = $ir['username'];
 
         $insertComment = $db->query("INSERT INTO `comments` (Comment, SendTo, SentFrom) VALUES ('".$comment."', ".$_GET["u"].", '.".$username."')");
@@ -287,7 +355,7 @@ if(isset($_POST['postComment'])) {
     }
 }
 
-echo '<table id="comments" class="table" border="1" cellpadding="10" align="center">';
+echo '<table id="comments" class="table" cellpadding="10" align="center">';
 
 echo '<th>Comment</th>';
 echo '<th>Sent From</th>';
@@ -305,7 +373,7 @@ while($getComments = $db->fetch_row($selectComments)) {
     echo '<td>';
     echo $getComments['SentFrom'];
     echo '<td>';
-    echo date('d/m/Y g:i:s A',  strtotime($getComments['SentOn']));
+    echo date($vu_config['date.format'],  strtotime($getComments['SentOn']));
     if($_GET["u"] == $ir['userid']) {
         echo '<td>';
         echo "<a href='viewuser.php?u=".$_GET["u"]."&commentID=".$getComments['ID']."&delete=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/delete.png' alt='Delete Comment' title='Delete Comment'></a>";
