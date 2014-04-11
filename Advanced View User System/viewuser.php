@@ -23,31 +23,35 @@ $vu_config = array(
 
 /**
  * Calculate the time difference between the given date and time and now and returns an human friendly description of the time lapsed.
- * 
+ *
  * @param string $datetime The date and time to calculate the time lapsed.
  * @return string Returns an human friendly description of the time lapsed.
  */
 function time_lapsed($datetime) {
     $time_diff = time() - $datetime;
-    
+
     $tokens = array(
     	86400 => 'day',
         3600 => 'hour',
         60 => 'minute',
         1 => 'second'
     );
-    
+
     foreach ($tokens as $unit => $description) {
         if ($time_diff < $unit) {
             continue;
         }
-        
+
         $result = floor($time_diff / $unit);
-        
+
         return $result . ' ' . $description . (($result > 1) ? 's' : '');
     }
-    
+
     return '0 second';
+}
+
+function checkblank($in) {
+    return !$in ? 'N/A' : $in;
 }
 
 /********** FUNCTIONS END **********/
@@ -88,7 +92,7 @@ echo <<<CSS
     padding: 3px;
     outline: 0;
 }
-        
+
 .profile-table {
     line-height: 1.5em;
 }
@@ -105,7 +109,7 @@ echo <<<CSS
     padding: 2px 5px;
     text-shadow: 1px 1px 1px rgba(0,0,0,.2);
 }
-        
+
 .user-status-online {
     background: #1cb841;
 }
@@ -336,10 +340,9 @@ echo <<<COMMENT_FORM
 </form>
 COMMENT_FORM;
 
-if(isset($_POST['postComment'])) {
+if (isset($_POST['postComment'])) {
     if(!isset($_POST['comment']) || empty($_POST['comment'])) {
-        echo '<font color="red">Required field is empty!</font>';
-        exit();
+        echo '<p><font color="red">Required field is empty!</font></p>';
     } else {
         $comment = htmlspecialchars(trim($db->escape($_POST['comment'])));
         $username = $ir['username'];
@@ -347,54 +350,48 @@ if(isset($_POST['postComment'])) {
         $insertComment = $db->query("INSERT INTO `comments` (Comment, SendTo, SentFrom) VALUES ('".$comment."', ".$_GET["u"].", '.".$username."')");
 
         if($insertComment) {
-            event_add($_GET["u"], "<a href='viewuser.php?u=".$ir['userid']."'><font color='blue'>[".$ir['userid']."]".$ir['username']."</font></a> commented on your profile! Click <a href='viewuser.php?u=".$ir['userid']."#comments'><font color='blue'>here</font></a> to check it.");
-            exit(header("Location: viewuser.php?u=".$_GET["u"]));
+            event_add($_GET['u'], "<a href=\"viewuser.php?u={$ir['userid']}\">[{$ir['userid']}]{$ir['username']}</a> commented on your profile! Click <a href=\"viewuser.php?u={$ir['userid']}#comments\">here</a> to check it.");
         } else {
-            echo '<font color="red">Could not create comment.</font>';
-            exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
+            echo '<p><font color="red">Could not create comment.</font></p>';
         }
     }
 }
 
-echo '<table id="comments" class="table" cellpadding="10" align="center">';
+if (isset($_GET['delete'])) {
+    $commentID = htmlspecialchars(trim($_GET['commentID']));
+    $db->query("DELETE FROM `comments` WHERE ID = {$commentID}");
+}
 
-echo '<th>Comment</th>';
-echo '<th>Sent From</th>';
-echo '<th>Sent On</th>';
+echo <<<COMMENTS
+<table id="comments" class="table" cellpadding="10" align="center">
+<thead>
+    <tr>
+        <th>Comment</th>
+        <th>Sent From</th>
+        <th>Sent On</th>
+COMMENTS;
 
-if($_GET["u"] == $ir['userid']) {
+if ($_GET["u"] == $ir['userid']) {
     echo '<th>Actions</th>';
 }
 
-$selectComments = $db->query("SELECT * FROM `comments` WHERE `SendTo` = ".$_GET["u"]." ORDER BY `SentOn` DESC");
+echo '</tr></thead>';
 
-while($getComments = $db->fetch_row($selectComments)) {
-    echo '<tr><td>';
-    echo $getComments['Comment'];
-    echo '<td>';
-    echo $getComments['SentFrom'];
-    echo '<td>';
-    echo date($vu_config['date.format'],  strtotime($getComments['SentOn']));
-    if($_GET["u"] == $ir['userid']) {
-        echo '<td>';
-        echo "<a href='viewuser.php?u=".$_GET["u"]."&commentID=".$getComments['ID']."&delete=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/delete.png' alt='Delete Comment' title='Delete Comment'></a>";
+$selectComments = $db->query("SELECT * FROM `comments` WHERE `SendTo` = {$_GET["u"]} ORDER BY `SentOn` DESC");
+
+while ($getComments = $db->fetch_row($selectComments)) {
+    echo "<tr><td>{$getComments['Comment']}</td><td>{$getComments['SentFrom']}</td>",
+        "<td>" . date($vu_config['date.format'],  strtotime($getComments['SentOn'])) . '</td>';
+
+    if ($_GET['u'] == $ir['userid']) {
+        echo "<td><a href=\"viewuser.php?u={$_GET['u']}&commentID={$getComments['ID']}&delete=true\">",
+            '<img src="http://www.famfamfam.com/lab/icons/silk/icons/delete.png" alt="Delete Comment" title="Delete Comment" /></a></td>';
     }
-    echo '</td></tr>';
+
+    echo '</tr>';
 }
+
 echo '</table>';
-
-if(isset($_GET['delete'])) {
-    $commentID = htmlspecialchars(trim($_GET['commentID']));
-    $db->query("DELETE FROM `comments` WHERE ID=".$commentID);
-    exit(header("Location: viewuser.php?u=".$_GET["u"]));
-}
-
-function checkblank($in) {
-  if(!$in) {
-    return "N/A";
-  }
-  return $in;
-}
 
 $h->endpage();
 ?>
