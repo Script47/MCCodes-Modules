@@ -17,6 +17,8 @@
 $vu_config = array(
 	'date.format' => 'F j, Y g:i:s a'
 );
+
+$_GET['u'] = isset($_GET['u']) ? abs((int) $_GET['u']) : null;
 /******** CONFIGURATION END ********/
 
 /************ FUNCTIONS ************/
@@ -54,11 +56,46 @@ function checkblank($in) {
     return !$in ? 'N/A' : $in;
 }
 
+/**
+ * Insert a new comment on the user profile.
+ *
+ * @param string $comment To comment to be added.
+ * @param int $sendTo The id of the user that the comment will be added to.
+ * @param string $sentFrom The name of who added the comment.
+ * @return boolean Return TRUE if comment was successfully added, and FALSE otherwise.
+ */
+function insert_comment($comment, $sendTo, $sentFrom) {
+    global $db;
+
+    $comment = htmlspecialchars(trim($db->escape($comment)));
+    $sendTo = (int) $sendTo;
+
+    return $db->query("INSERT INTO `comments` (Comment, SendTo, SentFrom) VALUES ('{$comment}', {$sendTo}, '.{$sentFrom}')") != null;
+}
+
+/**
+ * Delete a comment from the user profile. This function will allow only the owner to remove them.
+ *
+ * @param int $comment_id The ID of comment to be removed.
+ * @param int $user_id The ID of the user trying to remove the comment.
+ * @return boolean Return TRUE if comment was successfully deleted, and FALSE otherwise.
+ */
+function delete_comment($comment_id, $user_id) {
+    // Allow only the user from the current profile to delete comments
+    if ($user_id != $_GET['u']) {
+        return false;
+    }
+
+    global $db;
+
+    $comment_id = (int) $comment_id;
+
+    return $db->query("DELETE FROM `comments` WHERE ID = {$comment_id}") == true;
+}
+
 /********** FUNCTIONS END **********/
 
 include 'globals.php';
-
-$_GET['u'] = isset($_GET['u']) ? abs((int) $_GET['u']) : null;
 
 if(!$_GET['u'] > 0) {
     echo '<p>Invalid use of file</p>';
@@ -117,6 +154,10 @@ echo <<<CSS
 .user-status-offline {
     background: #ca3c3c;
 }
+
+.error-message {
+    color: red;
+}
 </style>
 CSS;
 
@@ -143,6 +184,49 @@ if ($db->num_rows($q) == 0) {
 }
 
 $r = $db->fetch_row($q);
+
+/********** DO ACTION **********/
+$action = isset($_GET['a']) ? $_GET['a'] : '';
+$messages = array();
+
+switch ($action) {
+	case 'insert_comment':
+	    if(!isset($_POST['comment']) || empty($_POST['comment'])) {
+	        $messages['comment_blank'] = 'Required field is empty!';
+	    } else {
+	        if(insert_comment($_POST['comment'], $_GET['u'], $ir['username'])) {
+	            event_add($_GET['u'], "<a href=\"viewuser.php?u={$ir['userid']}\">[{$ir['userid']}]{$ir['username']}</a> commented on your profile! Click <a href=\"viewuser.php?u={$ir['userid']}#comments\">here</a> to check it.");
+	        } else {
+	            $messages['comment_not_created'] = 'Could not create comment.';
+	        }
+	    }
+	    break;
+	case 'delete_comment':
+	    delete_comment($_GET['comment_id'], $ir['userid']);
+	    break;
+	case 'rate_user':
+        if($ir['daily_rating'] <= 0) {
+            $messages['already_rated'] = 'You have already used your rating for today.';
+            break;
+        } elseif($_GET['u'] == $userid) {
+	        $messages['cant_rate_yourself'] = 'You can\'t rate yourself.';
+	        break;
+	    }
+
+	    if ($_GET['rate'] == 'up') {
+            event_add($_GET['u'], "<font color='green'><a href='viewuser.php?u={$ir['userid']}'><font color='blue'>[{$ir['userid']}]{$ir['username']}</font></a> rated you up!</font>");
+            $db->query("UPDATE `users` SET rating = rating+1 WHERE userid = {$_GET['u']}");
+            $db->query("UPDATE `users` SET daily_rating = 0 WHERE userid = {$userid}");
+            exit(header("Location: viewuser.php?u={$_GET['u']}"));
+	    } elseif ($_GET['rate'] == 'down') {
+            event_add($_GET['u'], "<font color='red'><a href='viewuser.php?u={$ir['userid']}'><font color='blue'>[{$ir['userid']}]{$ir['username']}</font></a> down rated you!</font>");
+            $db->query("UPDATE `users` SET rating = rating-1 WHERE userid = {$_GET['u']}");
+            $db->query("UPDATE `users` SET daily_rating = 0 WHERE userid = {$userid}");
+            exit(header("Location: viewuser.php?u={$_GET['u']}"));
+	    }
+	    break;
+}
+/******** DO ACTION END ********/
 
 switch ($r['user_level']) {
 	case 1:
@@ -186,9 +270,15 @@ if($r['laston'] >= (time() - 15 * 60)) {
     $user_status = '<span class="user-status-offline">Offline</span>';
 }
 
-echo "<h3>Profile for {$r['username']}</h3>
+echo "<h3>Profile for {$r['username']}</h3>";
 
-<table width=\"100%\" cellspacing=\"1\" class=\"table profile-table\">
+if (isset($messages['already_rated'])) {
+    echo "<p class=\"error-message\">{$messages['already_rated']}</p>";
+} elseif (isset($messages['cant_rate_yourself'])) {
+    echo "<p class=\"error-message\">{$messages['cant_rate_yourself']}</p>";
+}
+
+echo "<table width=\"100%\" cellspacing=\"1\" class=\"table profile-table\">
     <tr><th>General Info</th><th>Financial Info</th><th>Display Pic</th></tr>
     <tr><td>
     <b>Name:</b> {$username_display} [{$r['userid']}] {$donator_sign}<br />
@@ -210,39 +300,8 @@ if($r['rating'] == 0) {
 	echo '<font color="red">'.$r['rating'].'</font>';
 }
 
-$rateUp = htmlspecialchars(trim(isset($_GET['rateUp'])));
-$rateDown = htmlspecialchars(trim(isset($_GET['rateDown'])));
-
-echo " <a href='viewuser.php?u={$_GET['u']}&rateUp=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/arrow_up.png' alt='Rate Up' title='Rate Up'></a>";
-echo "<a href='viewuser.php?u={$_GET['u']}&rateDown=true'><img src='http://www.famfamfam.com/lab/icons/silk/icons/arrow_down.png' alt='Rate Down' title='Rate Down'></a>";
-
-if($rateUp) {
-    if($ir['daily_rating'] <= 0) {
-        echo '<font color="red">You have already used your rating for today.</font>';
-        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
-    } else if($_GET["u"] == $userid) {
-        echo "<font color='red'>You can't up rate yourself.</font>";
-        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
-    } else {
-        event_add($id, "<font color='green'><a href='viewuser.php?u={$ir['userid']}'><font color='blue'>[{$ir['userid']}]{$ir['username']}</font></a> rated you up!</font>");
-        $db->query("UPDATE `users` SET rating=rating+1 WHERE userid=".$_GET["u"]);
-        $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userid");
-        exit(header("Location: viewuser.php?u=".$_GET["u"]));
-    }
-} else if($rateDown) {
-    if($ir['daily_rating'] <= 0) {
-        echo '<font color="red">You have already used your rating for today.</font>';
-        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
-    } else if($id == $userid) {
-        echo "<font color='red'>You can't down rate yourself.</font>";
-        exit(header("Refresh:2; URL=viewuser.php?u=".$_GET["u"]));
-    } else {
-        event_add($_GET["u"], "<font color='red'><a href='viewuser.php?u={$ir['userid']}'><font color='blue'>[{$ir['userid']}]{$ir['username']}</font></a> down rated you!</font>");
-        $db->query("UPDATE `users` SET rating=rating-1 WHERE userid=$".$_GET["u"]);
-        $updateUsersDailyRating = $db->query("UPDATE `users` SET daily_rating=0 WHERE userid=$userid");
-        exit(header("Location: viewuser.php?u=".$_GET["u"]));
-    }
-}
+echo " <a href='viewuser.php?u={$_GET['u']}&a=rate_user&rate=up'><img src='http://www.famfamfam.com/lab/icons/silk/icons/arrow_up.png' alt='Rate Up' title='Rate Up'></a>";
+echo "<a href='viewuser.php?u={$_GET['u']}&a=rate_user&rate=down'><img src='http://www.famfamfam.com/lab/icons/silk/icons/arrow_down.png' alt='Rate Down' title='Rate Down'></a>";
 
 echo "<br/>
 <b>Location:</b> {$r['cityname']}</td><td>
@@ -331,36 +390,20 @@ if($ir['user_level'] == 2 || $ir['user_level'] == 3 || $ir['user_level'] == 5) {
 }
     echo "</tr></table>";
 
+if (isset($messages['comment_blank'])) {
+    echo "<p class=\"error-message\">{$messages['comment_blank']}</p>";
+} elseif (isset($messages['comment_not_created'])) {
+    echo "<p class=\"error-message\">{$messages['comment_not_created']}</p>";
+}
+
 echo <<<COMMENT_FORM
-<form method="post" class="comment-form">
+<form method="post" class="comment-form" action="viewuser.php?u={$_GET['u']}&a=insert_comment">
     <fieldset>
         <input class="comment-field" name="comment" placeholder="Your comment" title="Your Comment" spellcheck="true" required />
     </fieldset>
-    <input type="submit" name="postComment" value="Comment" />
+    <input type="submit" value="Comment" />
 </form>
 COMMENT_FORM;
-
-if (isset($_POST['postComment'])) {
-    if(!isset($_POST['comment']) || empty($_POST['comment'])) {
-        echo '<p><font color="red">Required field is empty!</font></p>';
-    } else {
-        $comment = htmlspecialchars(trim($db->escape($_POST['comment'])));
-        $username = $ir['username'];
-
-        $insertComment = $db->query("INSERT INTO `comments` (Comment, SendTo, SentFrom) VALUES ('".$comment."', ".$_GET["u"].", '.".$username."')");
-
-        if($insertComment) {
-            event_add($_GET['u'], "<a href=\"viewuser.php?u={$ir['userid']}\">[{$ir['userid']}]{$ir['username']}</a> commented on your profile! Click <a href=\"viewuser.php?u={$ir['userid']}#comments\">here</a> to check it.");
-        } else {
-            echo '<p><font color="red">Could not create comment.</font></p>';
-        }
-    }
-}
-
-if (isset($_GET['delete'])) {
-    $commentID = htmlspecialchars(trim($_GET['commentID']));
-    $db->query("DELETE FROM `comments` WHERE ID = {$commentID}");
-}
 
 echo <<<COMMENTS
 <table id="comments" class="table" cellpadding="10" align="center">
@@ -371,20 +414,20 @@ echo <<<COMMENTS
         <th>Sent On</th>
 COMMENTS;
 
-if ($_GET["u"] == $ir['userid']) {
+if ($_GET['u'] == $ir['userid']) {
     echo '<th>Actions</th>';
 }
 
 echo '</tr></thead>';
 
-$selectComments = $db->query("SELECT * FROM `comments` WHERE `SendTo` = {$_GET["u"]} ORDER BY `SentOn` DESC");
+$selectComments = $db->query("SELECT * FROM `comments` WHERE `SendTo` = {$_GET['u']} ORDER BY `SentOn` DESC");
 
 while ($getComments = $db->fetch_row($selectComments)) {
     echo "<tr><td>{$getComments['Comment']}</td><td>{$getComments['SentFrom']}</td>",
         "<td>" . date($vu_config['date.format'],  strtotime($getComments['SentOn'])) . '</td>';
 
     if ($_GET['u'] == $ir['userid']) {
-        echo "<td><a href=\"viewuser.php?u={$_GET['u']}&commentID={$getComments['ID']}&delete=true\">",
+        echo "<td><a href=\"viewuser.php?u={$_GET['u']}&a=delete_comment&comment_id={$getComments['ID']}\">",
             '<img src="http://www.famfamfam.com/lab/icons/silk/icons/delete.png" alt="Delete Comment" title="Delete Comment" /></a></td>';
     }
 
