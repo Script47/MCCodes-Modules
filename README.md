@@ -1,7 +1,7 @@
 MCCodes-Modules - Overview
 ===============
 
-<b>Devloper:</b> Script47
+<b>Developer:</b> Script47
 <br/>
 <b>Description:</b> A repository containing all my latest MCCodes modules. 
 
